@@ -92,7 +92,11 @@ class MainActivity: AppCompatActivity() {
             Box(Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                SlideSelectBarLayout(items) {
+                SlideSelectBarLayout(items,
+                    onSuccess = {
+                        Log.d("gzz", "$it")
+                    }
+                ) {
                     Text(
                         text = it.text,
                         color = if (it.selected) Color(0xff0288ce) else Color(0xffbbbbbb),
