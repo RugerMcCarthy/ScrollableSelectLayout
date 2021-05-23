@@ -1,9 +1,7 @@
 ## :camera_flash: Screenshots
 
 <!-- You can add more screenshots here if you like -->
-<img src="/samples/slide_select_bar.gif" width="260">
-
-<img src="/samples/mirror.png" width="260">
+<img src="/samples/slide_select_bar.gif" width="260">&emsp;<img src="/samples/mirror.png" width="260">
 
 ## License
 
