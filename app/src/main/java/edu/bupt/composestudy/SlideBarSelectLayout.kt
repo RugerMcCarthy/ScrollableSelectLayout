@@ -50,11 +50,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
-open class SlideSelectBarColumnItem(selected: Boolean = false) {
+private class SlideSelectBarColumnItem<T>(var item: T, selected: Boolean = false) {
     var selected by mutableStateOf(selected)
-}
-class DefaultSlideSelectBarColumnItem(text: String, selected: Boolean = false):  SlideSelectBarColumnItem(selected) {
-    var text by mutableStateOf(text)
 }
 
 @Composable
@@ -92,7 +89,10 @@ private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Compos
 
 @ExperimentalMaterialApi
 @Composable
-fun <E: SlideSelectBarColumnItem> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> Unit, onFail: () -> Unit = {},content: @Composable RowScope.(E) -> Unit) {
+fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> Unit, onFail: () -> Unit = {},content: @Composable RowScope.(E, Boolean) -> Unit) {
+    var slideSelectBarColumnItems = items.map {
+        SlideSelectBarColumnItem(it)
+    }
     var itemWidth = 200.dp
     var itemWidthPx = with(LocalDensity.current) {
         itemWidth.toPx()
@@ -103,14 +103,14 @@ fun <E: SlideSelectBarColumnItem> SlideSelectBarLayout(items: List<E>, onSuccess
     }
     var anthors = mutableMapOf<Float, Int>()
 
-    for (index in -1 .. items.size - 2) {
+    for (index in -1 .. slideSelectBarColumnItems.size - 2) {
         anthors[-(index + 1) * itemHeightPx] = index
     }
-    var midItemIndexStart = (((items.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(items.size - 2)
-    items[midItemIndexStart + 1].selected = true
+    var midItemIndexStart = (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
+    slideSelectBarColumnItems[midItemIndexStart + 1].selected = true
     var swipeableState = rememberSwipeableState(initialValue = midItemIndexStart) {
-        items[midItemIndexStart + 1].selected = false
-        items[it + 1].selected = true
+        slideSelectBarColumnItems[midItemIndexStart + 1].selected = false
+        slideSelectBarColumnItems[it + 1].selected = true
         midItemIndexStart = it
         true
     }
@@ -171,14 +171,14 @@ fun <E: SlideSelectBarColumnItem> SlideSelectBarLayout(items: List<E>, onSuccess
                         .fillMaxWidth()
                         .height(itemHeight)
                 )
-                for (item in items) {
+                for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(itemHeight),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        content(item)
+                        content(slideSelectBarColumnItem.item, slideSelectBarColumnItem.selected)
                     }
                 }
                 Box(
@@ -224,13 +224,13 @@ fun <E: SlideSelectBarColumnItem> SlideSelectBarLayout(items: List<E>, onSuccess
 fun ScrollSelectColumnPreview() {
     var items = remember {
         mutableListOf (
-            DefaultSlideSelectBarColumnItem("Hello"),
-            DefaultSlideSelectBarColumnItem("Guan"),
-            DefaultSlideSelectBarColumnItem("Ruger"),
-            DefaultSlideSelectBarColumnItem("Compose"),
-            DefaultSlideSelectBarColumnItem("Scroller"),
-            DefaultSlideSelectBarColumnItem("World"),
-            DefaultSlideSelectBarColumnItem("Tom")
+            "Tom",
+            "Lily",
+            "Jack",
+            "Bob",
+            "Alice",
+            "Jessy",
+            "Nancy"
         )
     }
     Box(Modifier.fillMaxSize(),
@@ -240,10 +240,10 @@ fun ScrollSelectColumnPreview() {
             onSuccess = {
                 Log.d("gzz", "$it")
             }
-        ) {
+        ) { item, selected ->
             Text(
-                text = it.text,
-                color = if (it.selected) Color(0xff0288ce) else Color(0xffbbbbbb),
+                text = item,
+                color = if (selected) Color(0xff0288ce) else Color(0xffbbbbbb),
                 fontWeight = FontWeight.W500,
                 style = MaterialTheme.typography.body1
             )

@@ -80,13 +80,13 @@ class MainActivity: AppCompatActivity() {
         setContent {
             var items = remember {
                 mutableListOf (
-                    DefaultSlideSelectBarColumnItem("Tom"),
-                    DefaultSlideSelectBarColumnItem("Lily"),
-                    DefaultSlideSelectBarColumnItem("Jack"),
-                    DefaultSlideSelectBarColumnItem("Bob"),
-                    DefaultSlideSelectBarColumnItem("Alice"),
-                    DefaultSlideSelectBarColumnItem("Jessy"),
-                    DefaultSlideSelectBarColumnItem("Nancy")
+                    "Tom",
+                    "Lily",
+                    "Jack",
+                    "Bob",
+                    "Alice",
+                    "Jessy",
+                    "Nancy"
                 )
             }
             Box(Modifier.fillMaxSize(),
@@ -96,10 +96,10 @@ class MainActivity: AppCompatActivity() {
                     onSuccess = {
                         Log.d("gzz", "$it")
                     }
-                ) {
+                ) { item, selected->
                     Text(
-                        text = it.text,
-                        color = if (it.selected) Color(0xff0288ce) else Color(0xffbbbbbb),
+                        text = item,
+                        color = if (selected) Color(0xff0288ce) else Color(0xffbbbbbb),
                         fontWeight = FontWeight.W500,
                         style = MaterialTheme.typography.body1
                     )
