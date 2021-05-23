@@ -72,155 +72,30 @@ import kotlinx.coroutines.launch
 import org.intellij.lang.annotations.JdkConstants
 import kotlin.math.roundToInt
 
+
 class MainActivity: AppCompatActivity() {
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Box(
-                modifier = Modifier.fillMaxSize(),
+            var items = remember {
+                mutableListOf (
+                    DefaultSlideSelectBarColumnItem("Tom"),
+                    DefaultSlideSelectBarColumnItem("Lily"),
+                    DefaultSlideSelectBarColumnItem("Jack"),
+                    DefaultSlideSelectBarColumnItem("Bob"),
+                    DefaultSlideSelectBarColumnItem("Alice"),
+                    DefaultSlideSelectBarColumnItem("Jessy"),
+                    DefaultSlideSelectBarColumnItem("Nancy")
+                )
+            }
+            Box(Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                ScrollSelectLayout()
-            }
-        }
-    }
-}
-
-@Composable
-fun ScrollSelectLayoutColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Layout(
-        content = content,
-        modifier = modifier,
-        measurePolicy = object: MeasurePolicy {
-            override fun MeasureScope.measure(
-                measurables: List<Measurable>,
-                constraints: Constraints
-            ): MeasureResult {
-                var newConstraints = Constraints()
-                var placeables = measurables.map {
-                    it.measure(newConstraints)
-                }
-                var needHeight = 0
-                placeables.forEach { placeable ->
-                    needHeight += placeable.height
-                }
-                var currentY = 0
-                return layout(constraints.maxWidth, needHeight) {
-                    placeables.forEach {
-                            placeable ->
-                        var currentX = (constraints.maxWidth - placeable.width) / 2
-                        placeable.placeRelative(x = currentX, y = currentY)
-                        Log.d("gzz","placeable: ${currentX} and ${currentY}")
-                        currentY += placeable.height
-                    }
-                }
-            }
-        }
-    )
-}
-
-@ExperimentalMaterialApi
-@Preview
-@Composable
-fun ScrollSelectColumnPreview() {
-    Box(Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        ScrollSelectLayout()
-    }
-}
-
-
-@ExperimentalMaterialApi
-@Composable
-fun <E> ScrollSelectLayout(items: List<E>, content: RowScope.(E) -> Unit) {
-
-    var names = mutableListOf (
-        ScrollSelectColumnItem(""),
-        ScrollSelectColumnItem("Hello"),
-        ScrollSelectColumnItem("Guan"),
-        ScrollSelectColumnItem("Ruger"),
-        ScrollSelectColumnItem("Compose"),
-        ScrollSelectColumnItem("Scroller"),
-        ScrollSelectColumnItem("World"),
-        ScrollSelectColumnItem("Tom"),
-        ScrollSelectColumnItem(""),
-    )
-    var itemWidth = 200.dp
-    var itemWidthPx = with(LocalDensity.current) {
-        itemWidth.toPx()
-    }
-    var itemHeight = 50.dp
-    var itemHeightPx = with(LocalDensity.current) {
-        itemHeight.toPx()
-    }
-    var anthors = mutableMapOf<Float, Int>()
-
-    for (index in 0 .. names.size - 3) {
-        anthors[-index * itemHeightPx] = index
-    }
-    var midItemIndexStart = (((names.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(names.size - 1)
-
-    names[midItemIndexStart + 1].selected = true
-    var swipeableState = rememberSwipeableState(initialValue = midItemIndexStart) {
-        names[midItemIndexStart + 1].selected = false
-        names[it + 1].selected = true
-        midItemIndexStart = it
-        true
-    }
-    Surface(
-        elevation = 5.dp,
-        shape = RoundedCornerShape(5.dp),
-        modifier = Modifier
-            .width(200.dp)
-            .height(itemHeight * 3)
-            .swipeable(
-                state = swipeableState,
-                anchors = anthors,
-                orientation = Orientation.Vertical,
-                thresholds = { _, _ ->
-                    FractionalThreshold(0.5f)
-                }
-            )
-            .drawWithContent {
-                drawContent()
-                drawLine(
-                    color = Color(0xff83cde6),
-                    start = Offset(itemWidthPx * (1 / 6f), itemHeightPx),
-                    end = Offset(itemWidthPx * (5 / 6f), itemHeightPx)
-                )
-                drawLine(
-                    color = Color(0xff83cde6),
-                    start = Offset(itemWidthPx * (1 / 6f), itemHeightPx * 2),
-                    end = Offset(itemWidthPx * (5 / 6f), itemHeightPx * 2)
-                )
-            }
-    ) {
-        ScrollSelectLayoutColumn(
-            Modifier
-                .fillMaxSize()
-                .layout { measurable, constraints ->
-                    var newConstraints = Constraints(minWidth = constraints.minWidth, maxWidth = constraints.maxWidth)
-                    var placeable = measurable.measure(newConstraints)
-                    var currentY = placeable.height / 2 - (itemHeightPx * 1.5).toInt()
-                    layout(placeable.width, placeable.height) {
-                        placeable.placeRelative(0, currentY)
-                    }
-                }
-                .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
-        ){
-            for (name in names) {
-                Log.d("gzz", "name: ${name.text}")
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(itemHeight),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                SlideSelectBarLayout(items) {
                     Text(
-                        text = name.text,
-                        color = if (name.selected) Color(0xff0288ce) else Color(0xffbbbbbb),
+                        text = it.text,
+                        color = if (it.selected) Color(0xff0288ce) else Color(0xffbbbbbb),
                         fontWeight = FontWeight.W500,
                         style = MaterialTheme.typography.body1
                     )
