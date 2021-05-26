@@ -17,6 +17,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Surface
@@ -44,6 +45,7 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
@@ -122,9 +124,10 @@ fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> 
                 shape = RoundedCornerShape(15.dp)
             )
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .width(200.dp)
+                .background(Color.White)
+                .fillMaxWidth()
                 .height(itemHeight * 3)
                 .swipeable(
                     state = swipeableState,
@@ -241,6 +244,10 @@ fun ScrollSelectColumnPreview() {
                 Log.d("gzz", "$it")
             }
         ) { item, selected ->
+            Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
+                , contentDescription = "test",
+                Modifier.width(20.dp).height(20.dp)
+            )
             Text(
                 text = item,
                 color = if (selected) Color(0xff0288ce) else Color(0xffbbbbbb),
