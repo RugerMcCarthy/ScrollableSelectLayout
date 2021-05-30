@@ -3,29 +3,16 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="../../../../../../layout/compose-model-1620999032117.xml" value="0.375" />
-        <entry key="../../../../../../layout/compose-model-1621004341088.xml" value="0.335" />
-        <entry key="../../../../../../layout/compose-model-1621046316931.xml" value="0.23707351389377418" />
-        <entry key="../../../../../../layout/compose-model-1621046317070.xml" value="0.23003412969283277" />
-        <entry key="../../../../../../layout/compose-model-1621051957533.xml" value="0.13202437373053486" />
-        <entry key="../../../../../../layout/compose-model-1621056151744.xml" value="0.2296928327645051" />
-        <entry key="../../../../../../layout/compose-model-1621503029125.xml" value="0.2611111111111111" />
-        <entry key="../../../../../../layout/compose-model-1621508363996.xml" value="0.25833333333333336" />
-        <entry key="../../../../../../layout/compose-model-1621588509445.xml" value="0.3638888888888889" />
-        <entry key="../../../../../../layout/compose-model-1621695119428.xml" value="0.25833333333333336" />
-        <entry key="../../../../../../layout/compose-model-1621737974308.xml" value="0.15962837837837837" />
-        <entry key="../../../../../../layout/compose-model-1621761210286.xml" value="0.14444444444444443" />
-        <entry key="../../../../../../layout/compose-model-1621764654703.xml" value="0.1175925925925926" />
-        <entry key="../../../../../../layout/compose-model-1621780547633.xml" value="0.15920608108108109" />
-        <entry key="../../../../../../layout/compose-model-1621923951984.xml" value="0.6875" />
-        <entry key="../../../../../../layout/compose-model-1622022369825.xml" value="0.335" />
-        <entry key="../../../../../../layout/custom_preview.xml" value="0.1398148148148148" />
-        <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.23703703703703705" />
-        <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.23703703703703705" />
+        <entry key="../../../../../../layout/compose-model-1622108862886.xml" value="0.23683985865320428" />
+        <entry key="../../../../../../layout/compose-model-1622165333436.xml" value="0.2175925925925926" />
+        <entry key="../../../../../../layout/compose-model-1622166666969.xml" value="0.2111111111111111" />
+        <entry key="../../../../../../layout/compose-model-1622172269636.xml" value="0.2064814814814815" />
+        <entry key="../../../../../../layout/compose-model-1622183746906.xml" value="0.20462962962962963" />
+        <entry key="../../../../../../layout/compose-model-1622354472328.xml" value="0.16554054054054054" />
+        <entry key="../../../../../../layout/compose-model-1622356968016.xml" value="0.45" />
       </map>
     </option>
   </component>
-  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="JDK" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>

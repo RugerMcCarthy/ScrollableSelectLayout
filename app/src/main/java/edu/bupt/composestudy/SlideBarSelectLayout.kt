@@ -3,6 +3,7 @@ package edu.bupt.composestudy
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,10 +20,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
@@ -32,12 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
@@ -49,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
@@ -66,9 +63,8 @@ private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Compos
                 measurables: List<Measurable>,
                 constraints: Constraints
             ): MeasureResult {
-                var newConstraints = Constraints()
                 var placeables = measurables.map {
-                    it.measure(newConstraints)
+                    it.measure(constraints)
                 }
                 var needHeight = 0
                 placeables.forEach { placeable ->
@@ -78,8 +74,7 @@ private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Compos
                 return layout(constraints.maxWidth, needHeight) {
                     placeables.forEach {
                             placeable ->
-                        var currentX = (constraints.maxWidth - placeable.width) / 2
-                        placeable.placeRelative(x = currentX, y = currentY)
+                        placeable.placeRelative(x = 0, y = currentY)
                         currentY += placeable.height
                     }
                 }
@@ -88,10 +83,29 @@ private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Compos
     )
 }
 
+@Composable
+private fun <E> SlideSelectBarColumnContent(
+    itemHeight: Dp,
+    slideSelectBarColumnItem: SlideSelectBarColumnItem<E>,
+    content: @Composable RowScope.(E, Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(itemHeight),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        content(slideSelectBarColumnItem.item, slideSelectBarColumnItem.selected)
+    }
+}
 
 @ExperimentalMaterialApi
 @Composable
-fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> Unit, onFail: () -> Unit = {},content: @Composable RowScope.(E, Boolean) -> Unit) {
+fun <E> SlideSelectBarLayout(items: List<E>,
+                             onSuccess: (selectedIndex: Int) -> Unit,
+                             onFail: () -> Unit = {},
+                             content: @Composable RowScope.(E, Boolean) -> Unit) {
     var slideSelectBarColumnItems = items.map {
         SlideSelectBarColumnItem(it)
     }
@@ -153,21 +167,21 @@ fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> 
                     )
                 }
         ) {
-            SlideSelectBarColumn(
-                Modifier
-                    .fillMaxSize()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .layout { measurable, constraints ->
-                        var newConstraints = Constraints(
+                        var nonConstraints = Constraints(
                             minWidth = constraints.minWidth,
                             maxWidth = constraints.maxWidth
                         )
-                        var placeable = measurable.measure(newConstraints)
+                        var placeable = measurable.measure(nonConstraints)
                         var currentY = placeable.height / 2 - (itemHeightPx * 1.5).toInt()
                         layout(placeable.width, placeable.height) {
                             placeable.placeRelative(0, currentY)
                         }
                     }
-                    .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
+                    .offset { IntOffset(0, swipeableState.offset.value.toInt()) },
             ){
                 Box(
                     modifier = Modifier
@@ -175,14 +189,11 @@ fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> 
                         .height(itemHeight)
                 )
                 for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(itemHeight),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        content(slideSelectBarColumnItem.item, slideSelectBarColumnItem.selected)
-                    }
+                    SlideSelectBarColumnContent(
+                        itemHeight = itemHeight,
+                        slideSelectBarColumnItem = slideSelectBarColumnItem,
+                        content = content
+                    )
                 }
                 Box(
                     modifier = Modifier
@@ -220,7 +231,6 @@ fun <E> SlideSelectBarLayout(items: List<E>, onSuccess: (selectedIndex: Int) -> 
         }
     }
 }
-
 @ExperimentalMaterialApi
 @Preview
 @Composable
