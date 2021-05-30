@@ -27,6 +27,7 @@ class MainActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            initDensity()
             var items = remember {
                 mutableListOf (
                     "Tom",

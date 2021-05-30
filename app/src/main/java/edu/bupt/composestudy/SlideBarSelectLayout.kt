@@ -106,25 +106,26 @@ fun <E> SlideSelectBarLayout(items: List<E>,
                              onSuccess: (selectedIndex: Int) -> Unit,
                              onFail: () -> Unit = {},
                              content: @Composable RowScope.(E, Boolean) -> Unit) {
-    var slideSelectBarColumnItems = items.map {
-        SlideSelectBarColumnItem(it)
+    val itemWidth = 200.dp
+    val itemHeight = 50.dp
+    val slideSelectBarColumnItems = remember(items) {
+        items.map {
+            SlideSelectBarColumnItem(it)
+        }
     }
-    var itemWidth = 200.dp
-    var itemWidthPx = with(LocalDensity.current) {
-        itemWidth.toPx()
+    var midItemIndexStart = remember(slideSelectBarColumnItems) {
+        val midItemIndexStart = (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
+        slideSelectBarColumnItems[midItemIndexStart + 1].selected = true
+        midItemIndexStart
     }
-    var itemHeight = 50.dp
-    var itemHeightPx = with(LocalDensity.current) {
-        itemHeight.toPx()
+    val anthors = remember(slideSelectBarColumnItems) {
+        val anthors = mutableMapOf<Float, Int>()
+        for (index in -1 .. slideSelectBarColumnItems.size - 2) {
+            anthors[-(index + 1) * itemHeight.toPx()] = index
+        }
+        anthors
     }
-    var anthors = mutableMapOf<Float, Int>()
-
-    for (index in -1 .. slideSelectBarColumnItems.size - 2) {
-        anthors[-(index + 1) * itemHeightPx] = index
-    }
-    var midItemIndexStart = (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
-    slideSelectBarColumnItems[midItemIndexStart + 1].selected = true
-    var swipeableState = rememberSwipeableState(initialValue = midItemIndexStart) {
+    val swipeableState = rememberSwipeableState(initialValue = midItemIndexStart) {
         slideSelectBarColumnItems[midItemIndexStart + 1].selected = false
         slideSelectBarColumnItems[it + 1].selected = true
         midItemIndexStart = it
@@ -155,28 +156,28 @@ fun <E> SlideSelectBarLayout(items: List<E>,
                     drawContent()
                     drawLine(
                         color = Color(0xff83cde6),
-                        start = Offset(itemWidthPx * (1 / 6f), itemHeightPx),
-                        end = Offset(itemWidthPx * (5 / 6f), itemHeightPx),
+                        start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx()),
+                        end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx()),
                         strokeWidth = 3f
                     )
                     drawLine(
                         color = Color(0xff83cde6),
-                        start = Offset(itemWidthPx * (1 / 6f), itemHeightPx * 2),
-                        end = Offset(itemWidthPx * (5 / 6f), itemHeightPx * 2),
+                        start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx() * 2),
+                        end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx() * 2),
                         strokeWidth = 3f
                     )
                 }
         ) {
-            Column(
+            SlideSelectBarColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .layout { measurable, constraints ->
-                        var nonConstraints = Constraints(
+                        val nonConstraints = Constraints(
                             minWidth = constraints.minWidth,
                             maxWidth = constraints.maxWidth
                         )
-                        var placeable = measurable.measure(nonConstraints)
-                        var currentY = placeable.height / 2 - (itemHeightPx * 1.5).toInt()
+                        val placeable = measurable.measure(nonConstraints)
+                        val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
                         layout(placeable.width, placeable.height) {
                             placeable.placeRelative(0, currentY)
                         }
@@ -256,7 +257,9 @@ fun ScrollSelectColumnPreview() {
         ) { item, selected ->
             Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
                 , contentDescription = "test",
-                Modifier.width(20.dp).height(20.dp)
+                Modifier
+                    .width(20.dp)
+                    .height(20.dp)
             )
             Text(
                 text = item,
