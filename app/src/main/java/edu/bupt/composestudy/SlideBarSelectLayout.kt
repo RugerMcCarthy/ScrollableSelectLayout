@@ -3,16 +3,7 @@ package edu.bupt.composestudy
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -32,8 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
@@ -103,6 +96,7 @@ private fun <E> SlideSelectBarColumnContent(
 @ExperimentalMaterialApi
 @Composable
 fun <E> SlideSelectBarLayout(items: List<E>,
+                             header: @Composable () -> Unit = {},
                              onSuccess: (selectedIndex: Int) -> Unit,
                              onFail: () -> Unit = {},
                              content: @Composable RowScope.(E, Boolean) -> Unit) {
@@ -138,10 +132,13 @@ fun <E> SlideSelectBarLayout(items: List<E>,
                 elevation = 10.dp,
                 shape = RoundedCornerShape(15.dp)
             )
+            .background(Color.White)
     ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            header()
+        }
         Box(
             modifier = Modifier
-                .background(Color.White)
                 .fillMaxWidth()
                 .height(itemHeight * 3)
                 .swipeable(
@@ -167,75 +164,77 @@ fun <E> SlideSelectBarLayout(items: List<E>,
                         strokeWidth = 3f
                     )
                 }
-        ) {
-            SlideSelectBarColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .layout { measurable, constraints ->
-                        val nonConstraints = Constraints(
-                            minWidth = constraints.minWidth,
-                            maxWidth = constraints.maxWidth
-                        )
-                        val placeable = measurable.measure(nonConstraints)
-                        val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
-                        layout(placeable.width, placeable.height) {
-                            placeable.placeRelative(0, currentY)
-                        }
-                    }
-                    .offset { IntOffset(0, swipeableState.offset.value.toInt()) },
-            ){
-                Box(
+                .graphicsLayer { clip = true }
+            ) {
+                SlideSelectBarColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(itemHeight)
-                )
-                for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
-                    SlideSelectBarColumnContent(
-                        itemHeight = itemHeight,
-                        slideSelectBarColumnItem = slideSelectBarColumnItem,
-                        content = content
+                        .layout { measurable, constraints ->
+                            val nonConstraints = Constraints(
+                                minWidth = constraints.minWidth,
+                                maxWidth = constraints.maxWidth
+                            )
+                            val placeable = measurable.measure(nonConstraints)
+                            val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeRelative(0, currentY)
+                            }
+                        }
+                        .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
+                ){
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(itemHeight)
+                    )
+                    for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
+                        SlideSelectBarColumnContent(
+                            itemHeight = itemHeight,
+                            slideSelectBarColumnItem = slideSelectBarColumnItem,
+                            content = content
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(itemHeight),
                     )
                 }
-                Box(
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+                Button(
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(itemHeight),
-                )
+                        .weight(1f),
+                    shape = RoundedCornerShape(0),
+                    onClick = {
+                        onSuccess(midItemIndexStart + 1)
+                    }
+                ) {
+                    Text("OK")
+                }
+                Button(
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                    shape = RoundedCornerShape(0),
+                    modifier = Modifier
+                        .weight(1f),
+                    onClick = {
+                        onFail()
+                    }
+                ) {
+                    Text("Cancel")
+                }
             }
         }
-        Row(
-            Modifier
-                .fillMaxWidth()
-        ) {
-            Button(
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                modifier = Modifier
-                    .weight(1f),
-                shape = RoundedCornerShape(0),
-                onClick = {
-                    onSuccess(midItemIndexStart + 1)
-                }
-            ) {
-                Text("OK")
-            }
-            Button(
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                shape = RoundedCornerShape(0),
-                modifier = Modifier
-                    .weight(1f),
-                onClick = {
-                    onFail()
-                }
-            ) {
-                Text("Cancel")
-            }
-        }
-    }
 }
 @ExperimentalMaterialApi
 @Preview
 @Composable
 fun ScrollSelectColumnPreview() {
+    initDensity()
     var items = remember {
         mutableListOf (
             "Tom",

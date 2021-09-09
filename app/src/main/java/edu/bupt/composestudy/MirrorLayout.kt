@@ -29,10 +29,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.focus.isFocused
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -87,6 +87,7 @@ class CountdownTimerLayoutMirrorSync: MirrorSync() {
     var focusEvent by mutableStateOf(false)
 }
 
+@ExperimentalComposeUiApi
 @Composable
 inline fun <reified T: MirrorSync> MirrorLayout(block: @Composable (T)-> Unit, animation: (T) -> Unit) {
     val mirrorSync: T = remember{ T::class.java.newInstance() } // for safety
