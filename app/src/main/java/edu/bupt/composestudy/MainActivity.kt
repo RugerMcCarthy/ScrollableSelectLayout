@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -40,13 +41,23 @@ class MainActivity: AppCompatActivity() {
             Box(Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                var slideSelectBarState = rememberSaveable(saver =  SlideSelectBarState.Saver) {
-                    SlideSelectBarState(2)
-                }
+                var slideSelectBarState = rememberSlideBarState()
                 SlideSelectBarLayout(
                     items = items,
                     slideSelectBarState = slideSelectBarState,
-                    modifier = Modifier.padding(vertical = 20.dp),
+                    itemHeight = 50.dp,
+                    modifier = Modifier.width(300.dp),
+                    contentPadding = PaddingValues(vertical = 20.dp),
+                    visibleCount = 3,
+                    header = {
+                       Box(modifier = Modifier
+                           .fillMaxWidth()
+                           .height(50.dp),
+                           contentAlignment = Alignment.Center
+                       ) {
+                           Text("Student Name", fontWeight = FontWeight.Bold)
+                       }
+                    },
                     footer = {
                         Row(
                             Modifier

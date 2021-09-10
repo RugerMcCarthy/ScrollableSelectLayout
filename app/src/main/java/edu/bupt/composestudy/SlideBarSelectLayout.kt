@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,13 +121,14 @@ class SlideSelectBarState(currentSwipeItemIndex: Int = -1) {
 fun <E> SlideSelectBarLayout(
     items: List<E>,
     slideSelectBarState: SlideSelectBarState,
+    itemHeight: Dp,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    visibleCount: Int = 3,
     header: @Composable () -> Unit = {},
     footer: @Composable () -> Unit = {},
     content: @Composable RowScope.(E, Boolean) -> Unit
 ) {
-    val itemWidth = 200.dp
-    val itemHeight = 50.dp
     val slideSelectBarColumnItems = remember(items) {
         items.map {
             SlideSelectBarColumnItem(it)
@@ -142,8 +144,8 @@ fun <E> SlideSelectBarLayout(
     }
     val anthors = remember(slideSelectBarColumnItems) {
         val anthors = mutableMapOf<Float, Int>()
-        for (index in -1 .. slideSelectBarColumnItems.size - 2) {
-            anthors[-(index + 1) * itemHeight.toPx()] = index
+        for (index in slideSelectBarColumnItems.indices) {
+            anthors[-index * itemHeight.toPx()] = index - 1
         }
         anthors
     }
@@ -154,9 +156,10 @@ fun <E> SlideSelectBarLayout(
         slideSelectBarState.currentSwipeItemIndex = midItemIndexStart + 1
         true
     }
+    var selectBoxOffset: Float = if (visibleCount.mod( 2) == 0) itemHeight.toPx() / 2f else 0f
     Column(
         Modifier
-            .width(200.dp)
+            .then(modifier)
             .shadow(
                 elevation = 10.dp,
                 shape = RoundedCornerShape(15.dp)
@@ -166,11 +169,11 @@ fun <E> SlideSelectBarLayout(
         Box(modifier = Modifier.fillMaxWidth()) {
             header()
         }
-        Box(modifier = Modifier.then(modifier)) {
+        Box(modifier = Modifier.padding(contentPadding)) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(itemHeight * 3)
+                    .height(itemHeight * visibleCount)
                     .swipeable(
                         state = swipeableState,
                         anchors = anthors,
@@ -180,17 +183,18 @@ fun <E> SlideSelectBarLayout(
                         }
                     )
                     .drawWithContent {
+                        var width = drawContext.size.width
                         drawContent()
                         drawLine(
                             color = Color(0xff83cde6),
-                            start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx()),
-                            end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx()),
+                            start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2)),
+                            end = Offset(width * (5 / 6f), itemHeight.toPx() * (((visibleCount - 1) / 2))),
                             strokeWidth = 3f
                         )
                         drawLine(
                             color = Color(0xff83cde6),
-                            start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx() * 2),
-                            end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx() * 2),
+                            start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
+                            end = Offset(width * (5 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
                             strokeWidth = 3f
                         )
                     }
@@ -207,7 +211,7 @@ fun <E> SlideSelectBarLayout(
                             val placeable = measurable.measure(nonConstraints)
                             val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
                             layout(placeable.width, placeable.height) {
-                                placeable.placeRelative(0, currentY)
+                                placeable.placeRelative(0, currentY  - selectBoxOffset.toInt())
                             }
                         }
                         .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
@@ -261,7 +265,8 @@ fun ScrollSelectColumnPreview() {
         }
         SlideSelectBarLayout(
             items = items,
-            slideSelectBarState = slideSelectBarState
+            slideSelectBarState = slideSelectBarState,
+            itemHeight = 50.dp
         ) { item, selected ->
             Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
                 , contentDescription = "test",
@@ -277,4 +282,9 @@ fun ScrollSelectColumnPreview() {
             )
         }
     }
+}
+
+@Composable
+fun rememberSlideBarState(currentSwipeItemIndex: Int = -1) = rememberSaveable(saver =  SlideSelectBarState.Saver) {
+    SlideSelectBarState(currentSwipeItemIndex)
 }
