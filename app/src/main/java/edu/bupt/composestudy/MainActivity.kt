@@ -6,11 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,12 +40,41 @@ class MainActivity: AppCompatActivity() {
             Box(Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                SlideSelectBarLayout(items,
-                    header = {
-                        Spacer(modifier = Modifier.height(30.dp))
-                    },
-                    onSuccess = {
-                        Log.d("gzz", "$it")
+                var slideSelectBarState = rememberSaveable(saver =  SlideSelectBarState.Saver) {
+                    SlideSelectBarState(2)
+                }
+                SlideSelectBarLayout(
+                    items = items,
+                    slideSelectBarState = slideSelectBarState,
+                    modifier = Modifier.padding(vertical = 20.dp),
+                    footer = {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                        ) {
+                            Button(
+                                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                                modifier = Modifier
+                                    .weight(1f),
+                                shape = RoundedCornerShape(0),
+                                onClick = {
+                                    Log.d("gzz", "index: ${slideSelectBarState.currentSwipeItemIndex}")
+                                }
+                            ) {
+                                Text("OK")
+                            }
+                            Button(
+                                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                                shape = RoundedCornerShape(0),
+                                modifier = Modifier
+                                    .weight(1f),
+                                onClick = {
+                                    Log.d("gzz", "failure")
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
                     }
                 ) { item, selected->
                     Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)

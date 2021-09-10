@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -18,9 +19,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.focusModifier
@@ -93,13 +98,33 @@ private fun <E> SlideSelectBarColumnContent(
     }
 }
 
+// 默认-1时初始状态为列表中间项
+class SlideSelectBarState(currentSwipeItemIndex: Int = -1) {
+    var currentSwipeItemIndex by mutableStateOf(currentSwipeItemIndex)
+
+    companion object {
+        val Saver = object: Saver<SlideSelectBarState, Int> {
+            override fun restore(value: Int): SlideSelectBarState {
+                return SlideSelectBarState(value)
+            }
+
+            override fun SaverScope.save(value: SlideSelectBarState): Int {
+                return value.currentSwipeItemIndex
+            }
+        }
+    }
+}
+
 @ExperimentalMaterialApi
 @Composable
-fun <E> SlideSelectBarLayout(items: List<E>,
-                             header: @Composable () -> Unit = {},
-                             onSuccess: (selectedIndex: Int) -> Unit,
-                             onFail: () -> Unit = {},
-                             content: @Composable RowScope.(E, Boolean) -> Unit) {
+fun <E> SlideSelectBarLayout(
+    items: List<E>,
+    slideSelectBarState: SlideSelectBarState,
+    modifier: Modifier = Modifier,
+    header: @Composable () -> Unit = {},
+    footer: @Composable () -> Unit = {},
+    content: @Composable RowScope.(E, Boolean) -> Unit
+) {
     val itemWidth = 200.dp
     val itemHeight = 50.dp
     val slideSelectBarColumnItems = remember(items) {
@@ -108,8 +133,11 @@ fun <E> SlideSelectBarLayout(items: List<E>,
         }
     }
     var midItemIndexStart = remember(slideSelectBarColumnItems) {
-        val midItemIndexStart = (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
+        val midItemIndexStart = if (slideSelectBarState.currentSwipeItemIndex != -1) {
+            slideSelectBarState.currentSwipeItemIndex - 1
+        } else (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
         slideSelectBarColumnItems[midItemIndexStart + 1].selected = true
+        slideSelectBarState.currentSwipeItemIndex = midItemIndexStart + 1
         midItemIndexStart
     }
     val anthors = remember(slideSelectBarColumnItems) {
@@ -123,6 +151,7 @@ fun <E> SlideSelectBarLayout(items: List<E>,
         slideSelectBarColumnItems[midItemIndexStart + 1].selected = false
         slideSelectBarColumnItems[it + 1].selected = true
         midItemIndexStart = it
+        slideSelectBarState.currentSwipeItemIndex = midItemIndexStart + 1
         true
     }
     Column(
@@ -137,34 +166,35 @@ fun <E> SlideSelectBarLayout(items: List<E>,
         Box(modifier = Modifier.fillMaxWidth()) {
             header()
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(itemHeight * 3)
-                .swipeable(
-                    state = swipeableState,
-                    anchors = anthors,
-                    orientation = Orientation.Vertical,
-                    thresholds = { _, _ ->
-                        FractionalThreshold(0.5f)
+        Box(modifier = Modifier.then(modifier)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight * 3)
+                    .swipeable(
+                        state = swipeableState,
+                        anchors = anthors,
+                        orientation = Orientation.Vertical,
+                        thresholds = { _, _ ->
+                            FractionalThreshold(0.5f)
+                        }
+                    )
+                    .drawWithContent {
+                        drawContent()
+                        drawLine(
+                            color = Color(0xff83cde6),
+                            start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx()),
+                            end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx()),
+                            strokeWidth = 3f
+                        )
+                        drawLine(
+                            color = Color(0xff83cde6),
+                            start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx() * 2),
+                            end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx() * 2),
+                            strokeWidth = 3f
+                        )
                     }
-                )
-                .drawWithContent {
-                    drawContent()
-                    drawLine(
-                        color = Color(0xff83cde6),
-                        start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx()),
-                        end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx()),
-                        strokeWidth = 3f
-                    )
-                    drawLine(
-                        color = Color(0xff83cde6),
-                        start = Offset(itemWidth.toPx() * (1 / 6f), itemHeight.toPx() * 2),
-                        end = Offset(itemWidth.toPx() * (5 / 6f), itemHeight.toPx() * 2),
-                        strokeWidth = 3f
-                    )
-                }
-                .graphicsLayer { clip = true }
+                    .graphicsLayer { clip = true }
             ) {
                 SlideSelectBarColumn(
                     modifier = Modifier
@@ -201,34 +231,11 @@ fun <E> SlideSelectBarLayout(items: List<E>,
                     )
                 }
             }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-            ) {
-                Button(
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                    modifier = Modifier
-                        .weight(1f),
-                    shape = RoundedCornerShape(0),
-                    onClick = {
-                        onSuccess(midItemIndexStart + 1)
-                    }
-                ) {
-                    Text("OK")
-                }
-                Button(
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
-                    shape = RoundedCornerShape(0),
-                    modifier = Modifier
-                        .weight(1f),
-                    onClick = {
-                        onFail()
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
         }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            footer()
+        }
+    }
 }
 @ExperimentalMaterialApi
 @Preview
@@ -249,10 +256,12 @@ fun ScrollSelectColumnPreview() {
     Box(Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        SlideSelectBarLayout(items,
-            onSuccess = {
-                Log.d("gzz", "$it")
-            }
+        var slideSelectBarState = remember {
+            SlideSelectBarState()
+        }
+        SlideSelectBarLayout(
+            items = items,
+            slideSelectBarState = slideSelectBarState
         ) { item, selected ->
             Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
                 , contentDescription = "test",
