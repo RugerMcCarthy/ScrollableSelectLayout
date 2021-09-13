@@ -123,10 +123,7 @@ fun <E> SlideSelectBarLayout(
     slideSelectBarState: SlideSelectBarState,
     itemHeight: Dp,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
     visibleCount: Int = 3,
-    header: @Composable () -> Unit = {},
-    footer: @Composable () -> Unit = {},
     content: @Composable RowScope.(E, Boolean) -> Unit
 ) {
     val slideSelectBarColumnItems = remember(items) {
@@ -157,87 +154,70 @@ fun <E> SlideSelectBarLayout(
         true
     }
     var selectBoxOffset: Float = if (visibleCount.mod( 2) == 0) itemHeight.toPx() / 2f else 0f
-    Column(
-        Modifier
+    Box(
+        modifier = Modifier
             .then(modifier)
-            .shadow(
-                elevation = 10.dp,
-                shape = RoundedCornerShape(15.dp)
+            .fillMaxWidth()
+            .height(itemHeight * visibleCount)
+            .swipeable(
+                state = swipeableState,
+                anchors = anthors,
+                orientation = Orientation.Vertical,
+                thresholds = { _, _ ->
+                    FractionalThreshold(0.5f)
+                }
             )
-            .background(Color.White)
+            .drawWithContent {
+                var width = drawContext.size.width
+                drawContent()
+                drawLine(
+                    color = Color(0xff83cde6),
+                    start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2)),
+                    end = Offset(width * (5 / 6f), itemHeight.toPx() * (((visibleCount - 1) / 2))),
+                    strokeWidth = 3f
+                )
+                drawLine(
+                    color = Color(0xff83cde6),
+                    start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
+                    end = Offset(width * (5 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
+                    strokeWidth = 3f
+                )
+            }
+            .graphicsLayer { clip = true }
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            header()
-        }
-        Box(modifier = Modifier.padding(contentPadding)) {
+        SlideSelectBarColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    val nonConstraints = Constraints(
+                        minWidth = constraints.minWidth,
+                        maxWidth = constraints.maxWidth
+                    )
+                    val placeable = measurable.measure(nonConstraints)
+                    val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
+                    layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(0, currentY  - selectBoxOffset.toInt())
+                    }
+                }
+                .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
+        ){
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(itemHeight * visibleCount)
-                    .swipeable(
-                        state = swipeableState,
-                        anchors = anthors,
-                        orientation = Orientation.Vertical,
-                        thresholds = { _, _ ->
-                            FractionalThreshold(0.5f)
-                        }
-                    )
-                    .drawWithContent {
-                        var width = drawContext.size.width
-                        drawContent()
-                        drawLine(
-                            color = Color(0xff83cde6),
-                            start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2)),
-                            end = Offset(width * (5 / 6f), itemHeight.toPx() * (((visibleCount - 1) / 2))),
-                            strokeWidth = 3f
-                        )
-                        drawLine(
-                            color = Color(0xff83cde6),
-                            start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
-                            end = Offset(width * (5 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
-                            strokeWidth = 3f
-                        )
-                    }
-                    .graphicsLayer { clip = true }
-            ) {
-                SlideSelectBarColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .layout { measurable, constraints ->
-                            val nonConstraints = Constraints(
-                                minWidth = constraints.minWidth,
-                                maxWidth = constraints.maxWidth
-                            )
-                            val placeable = measurable.measure(nonConstraints)
-                            val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
-                            layout(placeable.width, placeable.height) {
-                                placeable.placeRelative(0, currentY  - selectBoxOffset.toInt())
-                            }
-                        }
-                        .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
-                ){
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(itemHeight)
-                    )
-                    for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
-                        SlideSelectBarColumnContent(
-                            itemHeight = itemHeight,
-                            slideSelectBarColumnItem = slideSelectBarColumnItem,
-                            content = content
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(itemHeight),
-                    )
-                }
+                    .height(itemHeight)
+            )
+            for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
+                SlideSelectBarColumnContent(
+                    itemHeight = itemHeight,
+                    slideSelectBarColumnItem = slideSelectBarColumnItem,
+                    content = content
+                )
             }
-        }
-        Box(modifier = Modifier.fillMaxWidth()) {
-            footer()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight),
+            )
         }
     }
 }
