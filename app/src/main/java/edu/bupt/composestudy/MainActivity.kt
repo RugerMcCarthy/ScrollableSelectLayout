@@ -60,13 +60,13 @@ class MainActivity: AppCompatActivity() {
                     ) {
                         Text(text = "Student Name")
                     }
-                    var slideSelectBarState = rememberSlideBarState()
-                    SlideSelectBarLayout(
+                    var scrollableSelectState = rememberScrollableSelectState()
+                    ScrollableSelectLayout(
                         items = items,
-                        slideSelectBarState = slideSelectBarState,
+                        scrollableSelectState = scrollableSelectState,
                         itemHeight = 50.dp,
                         modifier = Modifier.fillMaxWidth().padding(20.dp),
-                        visibleCount = 3
+                        visibleAmount = 3
                     ) { item, selected->
                         Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
                             , contentDescription = "test",
@@ -90,7 +90,7 @@ class MainActivity: AppCompatActivity() {
                                 .weight(1f),
                             shape = RoundedCornerShape(0),
                             onClick = {
-                                Log.d("gzz", "index: ${slideSelectBarState.currentSwipeItemIndex}")
+                                Log.d("gzz", "index: ${scrollableSelectState.currentSwipeItemIndex}")
                             }
                         ) {
                             Text("OK")

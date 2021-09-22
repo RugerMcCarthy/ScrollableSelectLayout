@@ -1,13 +1,8 @@
 package edu.bupt.composestudy
 
-import android.util.Log
-import androidx.compose.foundation.background
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
@@ -21,15 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -39,21 +30,31 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 
-private class SlideSelectBarColumnItem<T>(var item: T, selected: Boolean = false) {
+open class SelectionLineStyle(
+    val color: Color,
+
+    @FloatRange(from = 0.0, to = 1.0)
+    val lengthFraction: Float,
+
+    val strokeWidth: Float
+) {
+    object Default: SelectionLineStyle(
+        color = Color(0xff83cde6),
+        lengthFraction = 1f,
+        strokeWidth = 3f
+    )
+}
+
+private class ScrollableSelectColumnItem<T>(var item: T, selected: Boolean = false) {
     var selected by mutableStateOf(selected)
 }
 
 @Composable
-private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun ScrollableSelectColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(
         content = content,
         modifier = modifier,
@@ -83,9 +84,9 @@ private fun SlideSelectBarColumn(modifier: Modifier = Modifier, content: @Compos
 }
 
 @Composable
-private fun <E> SlideSelectBarColumnContent(
+private fun <E> ScrollableSelectColumnItemLayout(
     itemHeight: Dp,
-    slideSelectBarColumnItem: SlideSelectBarColumnItem<E>,
+    scrollableSelectItem: ScrollableSelectColumnItem<E>,
     content: @Composable RowScope.(E, Boolean) -> Unit
 ) {
     Row(
@@ -95,70 +96,82 @@ private fun <E> SlideSelectBarColumnContent(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        content(slideSelectBarColumnItem.item, slideSelectBarColumnItem.selected)
+        content(scrollableSelectItem.item, scrollableSelectItem.selected)
     }
 }
 
 // 默认-1时初始状态为列表中间项
-class SlideSelectBarState(currentSwipeItemIndex: Int = -1) {
+class ScrollableSelectState(currentSwipeItemIndex: Int) {
     var currentSwipeItemIndex by mutableStateOf(currentSwipeItemIndex)
 
     companion object {
-        val Saver = object: Saver<SlideSelectBarState, Int> {
-            override fun restore(value: Int): SlideSelectBarState {
-                return SlideSelectBarState(value)
+        val Saver = object: Saver<ScrollableSelectState, Int> {
+            override fun restore(value: Int): ScrollableSelectState {
+                return ScrollableSelectState(value)
             }
 
-            override fun SaverScope.save(value: SlideSelectBarState): Int {
+            override fun SaverScope.save(value: ScrollableSelectState): Int {
                 return value.currentSwipeItemIndex
             }
         }
     }
 }
 
+/**
+ * A scrollable selector，can be applied to some scenes that require scrolling selection
+ *
+ * @param items A list contains sub-elements' info
+ * @param scrollableSelectState Through the state can get the info of selected item
+ * @param itemHeight Manually input the height of the sub-elements
+ * @param modifier Used to decorate this component
+ * @param visibleAmount Specify the number of sub-elements that can be displayed
+ * @param selectionLineStyle Specify the style of the selection line
+ * @param content Specify the layout style of sub-elements, You can make the selected item display different styles according to the state.
+ */
 @ExperimentalMaterialApi
 @Composable
-fun <E> SlideSelectBarLayout(
+fun <E> ScrollableSelectLayout(
     items: List<E>,
-    slideSelectBarState: SlideSelectBarState,
+    scrollableSelectState: ScrollableSelectState = rememberScrollableSelectState(),
     itemHeight: Dp,
     modifier: Modifier = Modifier,
-    visibleCount: Int = 3,
-    content: @Composable RowScope.(E, Boolean) -> Unit
+    visibleAmount: Int = 3,
+    selectionLineStyle: SelectionLineStyle = SelectionLineStyle.Default,
+    content: @Composable RowScope.(item: E, Boolean) -> Unit
 ) {
-    val slideSelectBarColumnItems = remember(items) {
+    val scrollableSelectColumnItems = remember(items) {
         items.map {
-            SlideSelectBarColumnItem(it)
+            ScrollableSelectColumnItem(it)
         }
     }
-    var midItemIndexStart = remember(slideSelectBarColumnItems) {
-        val midItemIndexStart = if (slideSelectBarState.currentSwipeItemIndex != -1) {
-            slideSelectBarState.currentSwipeItemIndex - 1
-        } else (((slideSelectBarColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(slideSelectBarColumnItems.size - 2)
-        slideSelectBarColumnItems[midItemIndexStart + 1].selected = true
-        slideSelectBarState.currentSwipeItemIndex = midItemIndexStart + 1
+    var midItemIndexStart = remember(scrollableSelectColumnItems) {
+        val midItemIndexStart = if (scrollableSelectState.currentSwipeItemIndex != -1) {
+            scrollableSelectState.currentSwipeItemIndex - 1
+        } else (((scrollableSelectColumnItems.size - 1) / 2) - 1).coerceAtLeast(0).coerceAtMost(scrollableSelectColumnItems.size - 2)
+        scrollableSelectColumnItems[midItemIndexStart + 1].selected = true
+        scrollableSelectState.currentSwipeItemIndex = midItemIndexStart + 1
         midItemIndexStart
     }
-    val anthors = remember(slideSelectBarColumnItems) {
+    val anthors = remember(scrollableSelectColumnItems) {
         val anthors = mutableMapOf<Float, Int>()
-        for (index in slideSelectBarColumnItems.indices) {
+        for (index in scrollableSelectColumnItems.indices) {
             anthors[-index * itemHeight.toPx()] = index - 1
         }
         anthors
     }
     val swipeableState = rememberSwipeableState(initialValue = midItemIndexStart) {
-        slideSelectBarColumnItems[midItemIndexStart + 1].selected = false
-        slideSelectBarColumnItems[it + 1].selected = true
+        scrollableSelectColumnItems[midItemIndexStart + 1].selected = false
+        scrollableSelectColumnItems[it + 1].selected = true
         midItemIndexStart = it
-        slideSelectBarState.currentSwipeItemIndex = midItemIndexStart + 1
+        scrollableSelectState.currentSwipeItemIndex = midItemIndexStart + 1
         true
     }
-    var selectBoxOffset: Float = if (visibleCount.mod( 2) == 0) itemHeight.toPx() / 2f else 0f
+    var selectBoxOffset: Float = if (visibleAmount.mod( 2) == 0) itemHeight.toPx() / 2f else 0f
     Box(
         modifier = Modifier
             .then(modifier)
             .fillMaxWidth()
-            .height(itemHeight * visibleCount)
+            .height(itemHeight * visibleAmount)
             .swipeable(
                 state = swipeableState,
                 anchors = anthors,
@@ -169,23 +182,31 @@ fun <E> SlideSelectBarLayout(
             )
             .drawWithContent {
                 var width = drawContext.size.width
+                var startFraction = (1 - selectionLineStyle.lengthFraction) / 2f
+                var endFraction = startFraction + selectionLineStyle.lengthFraction
                 drawContent()
                 drawLine(
-                    color = Color(0xff83cde6),
-                    start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2)),
-                    end = Offset(width * (5 / 6f), itemHeight.toPx() * (((visibleCount - 1) / 2))),
+                    color = selectionLineStyle.color,
+                    start = Offset(width * startFraction, itemHeight.toPx() * ((visibleAmount - 1) / 2)),
+                    end = Offset(width * endFraction, itemHeight.toPx() * (((visibleAmount - 1) / 2))),
                     strokeWidth = 3f
                 )
                 drawLine(
-                    color = Color(0xff83cde6),
-                    start = Offset(width * (1 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
-                    end = Offset(width * (5 / 6f), itemHeight.toPx() * ((visibleCount - 1) / 2 + 1)),
-                    strokeWidth = 3f
+                    color = selectionLineStyle.color,
+                    start = Offset(
+                        width * startFraction,
+                        itemHeight.toPx() * ((visibleAmount - 1) / 2 + 1)
+                    ),
+                    end = Offset(
+                        width * endFraction,
+                        itemHeight.toPx() * ((visibleAmount - 1) / 2 + 1)
+                    ),
+                    strokeWidth = selectionLineStyle.strokeWidth
                 )
             }
             .graphicsLayer { clip = true }
     ) {
-        SlideSelectBarColumn(
+        ScrollableSelectColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .layout { measurable, constraints ->
@@ -196,7 +217,7 @@ fun <E> SlideSelectBarLayout(
                     val placeable = measurable.measure(nonConstraints)
                     val currentY = placeable.height / 2 - (itemHeight.toPx() * 1.5).toInt()
                     layout(placeable.width, placeable.height) {
-                        placeable.placeRelative(0, currentY  - selectBoxOffset.toInt())
+                        placeable.placeRelative(0, currentY - selectBoxOffset.toInt())
                     }
                 }
                 .offset { IntOffset(0, swipeableState.offset.value.toInt()) }
@@ -206,10 +227,10 @@ fun <E> SlideSelectBarLayout(
                     .fillMaxWidth()
                     .height(itemHeight)
             )
-            for (slideSelectBarColumnItem in slideSelectBarColumnItems) {
-                SlideSelectBarColumnContent(
+            for (scrollableSelectItem in scrollableSelectColumnItems) {
+                ScrollableSelectColumnItemLayout(
                     itemHeight = itemHeight,
-                    slideSelectBarColumnItem = slideSelectBarColumnItem,
+                    scrollableSelectItem = scrollableSelectItem,
                     content = content
                 )
             }
@@ -221,50 +242,8 @@ fun <E> SlideSelectBarLayout(
         }
     }
 }
-@ExperimentalMaterialApi
-@Preview
-@Composable
-fun ScrollSelectColumnPreview() {
-    initDensity()
-    var items = remember {
-        mutableListOf (
-            "Tom",
-            "Lily",
-            "Jack",
-            "Bob",
-            "Alice",
-            "Jessy",
-            "Nancy"
-        )
-    }
-    Box(Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        var slideSelectBarState = remember {
-            SlideSelectBarState()
-        }
-        SlideSelectBarLayout(
-            items = items,
-            slideSelectBarState = slideSelectBarState,
-            itemHeight = 50.dp
-        ) { item, selected ->
-            Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground)
-                , contentDescription = "test",
-                Modifier
-                    .width(20.dp)
-                    .height(20.dp)
-            )
-            Text(
-                text = item,
-                color = if (selected) Color(0xff0288ce) else Color(0xffbbbbbb),
-                fontWeight = FontWeight.W500,
-                style = MaterialTheme.typography.body1
-            )
-        }
-    }
-}
 
 @Composable
-fun rememberSlideBarState(currentSwipeItemIndex: Int = -1) = rememberSaveable(saver =  SlideSelectBarState.Saver) {
-    SlideSelectBarState(currentSwipeItemIndex)
+fun rememberScrollableSelectState(initialItemIndex: Int = -1) = rememberSaveable(saver =  ScrollableSelectState.Saver) {
+    ScrollableSelectState(initialItemIndex)
 }

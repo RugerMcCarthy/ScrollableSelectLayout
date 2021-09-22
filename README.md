@@ -1,7 +1,31 @@
+## ScrollableSelectLayout
+A scrollable selector for Jetpack Compose，can be applied to some scenes that require scrolling selection
+
+## Parameter Introduction
+```kotlin
+/**
+ * @param items: A list contains sub-elements' info
+ * @param scrollableSelectState: Through the state can get the info of selected item
+ * @param itemHeight: Manually input the height of the sub-elements
+ * @param modifier: Used to decorate this component
+ * @param visibleAmount: Specify the number of sub-elements that can be displayed
+ * @param selectionLineStyle: Specify the style of the selection line
+ * @param content: Specify the layout style of sub-elements, You can make the selected item display different styles according to the state.
+ */
+fun <E> ScrollableSelectLayout(
+    items: List<E>,
+    scrollableSelectState: ScrollableSelectState = rememberScrollableSelectState(),
+    itemHeight: Dp,
+    modifier: Modifier = Modifier,
+    visibleAmount: Int = 3,
+    selectionLineStyle: SelectionLineStyle = SelectionLineStyle.Default,
+    content: @Composable RowScope.(item: E, Boolean) -> Unit
+)
+```
 ## :camera_flash: Screenshots
 
 <!-- You can add more screenshots here if you like -->
-<img src="/samples/slide_select_bar.gif" width="260">&emsp;<img src="/samples/mirror.png" width="260">
+<img src="/samples/slide_select_bar.gif" width="260">
 
 ## License
 
